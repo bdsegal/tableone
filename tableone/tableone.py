@@ -17,6 +17,9 @@ from tableone.modality import hartigan_diptest
 # display deprecation warnings
 warnings.simplefilter('always', DeprecationWarning)
 
+# Threshold for auto-detecting categorical variables. See documentation for
+# categorical_threshold argument below
+CATEGORICAL_THRESHOLD_DEFAULT = 0.005
 
 def load_dataset(name: str):
     """
@@ -164,6 +167,13 @@ class TableOne(object):
         Run Tukey's test for far outliers. If variables are found to
         have far outliers, a remark will be added below the Table 1.
         (default: False)
+    use_categorical_threshold : bool, optional
+        Use the categorical_threshold to auto-detect categorical variables
+    categorical_threshold : float, optional
+        Threshold for detecting categorical variables. If the number of unique
+        values over the total number of values is less than
+        categorical_threshold, then the variable is designated as categorical.
+        If no value is provided, defaults to 0.005.
 
     Attributes
     ----------
@@ -211,7 +221,9 @@ class TableOne(object):
                  smd: bool = False, overall: bool = True,
                  row_percent: bool = False, display_all: bool = False,
                  dip_test: bool = False, normal_test: bool = False,
-                 tukey_test: bool = False) -> None:
+                 tukey_test: bool = False,
+                 use_categorical_threshold: Optional[bool] = False,
+                 categorical_threshold: Optional[float] = None) -> None:
 
         # labels is now rename
         if labels is not None and rename is not None:
@@ -429,6 +441,13 @@ class TableOne(object):
         self.to_json = self.tableone.to_json
         self.to_latex = self.tableone.to_latex
 
+        self.use_categorical_threshold = use_categorical_threshold
+
+        if categorical_threshold:
+            self.categorical_threshold = categorical_threshold
+        else:
+            self.categorical_threshold = CATEGORICAL_THRESHOLD_DEFAULT
+
         # set display options
         if display_all:
             self._set_display_options()
@@ -559,12 +578,14 @@ class TableOne(object):
         date_cols = set(data.select_dtypes(include=[np.datetime64]).columns)
         likely_cat = set(data.columns) - numeric_cols
         likely_cat = list(likely_cat - date_cols)
+
+        if self.use_categorical_threshold:
         # check proportion of unique values if numerical
-        for var in data._get_numeric_data().columns:
-            likely_flag = 1.0 * data[var].nunique()/data[var].count() < 0.005
-            if likely_flag:
-                likely_cat.append(var)
-        return likely_cat
+            for var in data._get_numeric_data().columns:
+                likely_flag = 1.0 * data[var].nunique()/data[var].count() < self.categorical_threshold
+                if likely_flag:
+                    likely_cat.append(var)
+            return likely_cat
 
     def _cont_smd(self, data1=None, data2=None, mean1=None, mean2=None,
                   sd1=None, sd2=None, n1=None, n2=None, unbiased=False):
