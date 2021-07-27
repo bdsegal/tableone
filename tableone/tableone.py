@@ -582,10 +582,12 @@ class TableOne(object):
         if self.use_categorical_threshold:
         # check proportion of unique values if numerical
             for var in data._get_numeric_data().columns:
-                likely_flag = 1.0 * data[var].nunique()/data[var].count() < self.categorical_threshold
+                likely_flag = 1.0 * (data[var].nunique()/data[var].count() <
+                    self.categorical_threshold)
                 if likely_flag:
                     likely_cat.append(var)
-            return likely_cat
+
+        return likely_cat
 
     def _cont_smd(self, data1=None, data2=None, mean1=None, mean2=None,
                   sd1=None, sd2=None, n1=None, n2=None, unbiased=False):
