@@ -167,13 +167,15 @@ class TableOne(object):
         Run Tukey's test for far outliers. If variables are found to
         have far outliers, a remark will be added below the Table 1.
         (default: False)
-    use_categorical_threshold : bool, optional
+    use_threshold_to_detect_categorical : bool, optional
         Use the categorical_threshold to auto-detect categorical variables
+        (default: False)
     categorical_threshold : float, optional
         Threshold for detecting categorical variables. If the number of unique
         values over the total number of values is less than
         categorical_threshold, then the variable is designated as categorical.
-        If no value is provided, defaults to 0.005.
+        (default: 0.005)
+
 
     Attributes
     ----------
@@ -222,7 +224,7 @@ class TableOne(object):
                  row_percent: bool = False, display_all: bool = False,
                  dip_test: bool = False, normal_test: bool = False,
                  tukey_test: bool = False,
-                 use_categorical_threshold: Optional[bool] = False,
+                 use_threshold_to_detect_categorical: bool = False,
                  categorical_threshold: Optional[float] = None) -> None:
 
         # labels is now rename
@@ -305,6 +307,13 @@ class TableOne(object):
         if not dups.empty:
             raise InputError("""Input data contains duplicate
                                 columns: {}""".format(dups))
+
+        # Control how categorical variables are detected
+        self.use_threshold_to_detect_categorical = use_threshold_to_detect_categorical
+        if categorical_threshold:
+            self.categorical_threshold = categorical_threshold
+        else:
+            self.categorical_threshold = CATEGORICAL_THRESHOLD_DEFAULT
 
         # if categorical not specified, try to identify categorical
         if not categorical and type(categorical) != list:
@@ -441,13 +450,6 @@ class TableOne(object):
         self.to_json = self.tableone.to_json
         self.to_latex = self.tableone.to_latex
 
-        self.use_categorical_threshold = use_categorical_threshold
-
-        if categorical_threshold:
-            self.categorical_threshold = categorical_threshold
-        else:
-            self.categorical_threshold = CATEGORICAL_THRESHOLD_DEFAULT
-
         # set display options
         if display_all:
             self._set_display_options()
@@ -579,7 +581,7 @@ class TableOne(object):
         likely_cat = set(data.columns) - numeric_cols
         likely_cat = list(likely_cat - date_cols)
 
-        if self.use_categorical_threshold:
+        if self.use_threshold_to_detect_categorical:
         # check proportion of unique values if numerical
             for var in data._get_numeric_data().columns:
                 likely_flag = 1.0 * (data[var].nunique()/data[var].count() <
