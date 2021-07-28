@@ -224,8 +224,8 @@ class TableOne(object):
                  row_percent: bool = False, display_all: bool = False,
                  dip_test: bool = False, normal_test: bool = False,
                  tukey_test: bool = False,
-                 use_threshold_to_detect_categorical: bool = False,
-                 categorical_threshold: Optional[float] = None) -> None:
+                 use_threshold_to_detect_categorical: bool = True,
+                 categorical_threshold: float = CATEGORICAL_THRESHOLD_DEFAULT) -> None:
 
         # labels is now rename
         if labels is not None and rename is not None:
@@ -310,10 +310,7 @@ class TableOne(object):
 
         # Control how categorical variables are detected
         self.use_threshold_to_detect_categorical = use_threshold_to_detect_categorical
-        if categorical_threshold:
-            self.categorical_threshold = categorical_threshold
-        else:
-            self.categorical_threshold = CATEGORICAL_THRESHOLD_DEFAULT
+        self.categorical_threshold = categorical_threshold
 
         # if categorical not specified, try to identify categorical
         if not categorical and type(categorical) != list:
