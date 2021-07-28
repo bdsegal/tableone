@@ -18,8 +18,8 @@ from tableone.modality import hartigan_diptest
 warnings.simplefilter('always', DeprecationWarning)
 
 # Threshold for auto-detecting categorical variables. See documentation for
-# categorical_threshold argument below
-CATEGORICAL_THRESHOLD_DEFAULT = 0.005
+# categorical_autodetect_threshold argument below
+CATEGORICAL_AUTODETECT_THRESHOLD_DEFAULT = 0.005
 
 def load_dataset(name: str):
     """
@@ -167,13 +167,13 @@ class TableOne(object):
         Run Tukey's test for far outliers. If variables are found to
         have far outliers, a remark will be added below the Table 1.
         (default: False)
-    use_threshold_to_detect_categorical : bool, optional
-        Use the categorical_threshold to auto-detect categorical variables
-        (default: False)
-    categorical_threshold : float, optional
-        Threshold for detecting categorical variables. If the number of unique
-        values over the total number of values is less than
-        categorical_threshold, then the variable is designated as categorical.
+    categorical_autodetect_threshold : Union[float, None]
+        Threshold for detecting whether numeric variables should be treated
+        as categorical. If the number of unique values divided by the total
+        number of values is less than categorical_autodetect_threshold, then
+        the variable is designated as categorical. If
+        categorical_autodetect_threshold = None, then no threshold is applied
+        to detect whether numeric variables should be treated as categorical.
         (default: 0.005)
 
 
@@ -224,8 +224,7 @@ class TableOne(object):
                  row_percent: bool = False, display_all: bool = False,
                  dip_test: bool = False, normal_test: bool = False,
                  tukey_test: bool = False,
-                 use_threshold_to_detect_categorical: bool = True,
-                 categorical_threshold: float = CATEGORICAL_THRESHOLD_DEFAULT) -> None:
+                 categorical_autodetect_threshold: Union[float, None] = CATEGORICAL_AUTODETECT_THRESHOLD_DEFAULT) -> None:
 
         # labels is now rename
         if labels is not None and rename is not None:
@@ -309,8 +308,7 @@ class TableOne(object):
                                 columns: {}""".format(dups))
 
         # Control how categorical variables are detected
-        self.use_threshold_to_detect_categorical = use_threshold_to_detect_categorical
-        self.categorical_threshold = categorical_threshold
+        self.categorical_autodetect_threshold = categorical_autodetect_threshold
 
         # if categorical not specified, try to identify categorical
         if not categorical and type(categorical) != list:
@@ -578,11 +576,11 @@ class TableOne(object):
         likely_cat = set(data.columns) - numeric_cols
         likely_cat = list(likely_cat - date_cols)
 
-        if self.use_threshold_to_detect_categorical:
+        if self.categorical_autodetect_threshold:
         # check proportion of unique values if numerical
             for var in data._get_numeric_data().columns:
                 likely_flag = 1.0 * (data[var].nunique()/data[var].count() <
-                    self.categorical_threshold)
+                    self.categorical_autodetect_threshold)
                 if likely_flag:
                     likely_cat.append(var)
 
